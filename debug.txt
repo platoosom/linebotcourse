@@ -1,0 +1,22 @@
+{
+    "events": [
+        {
+            "type": "message",
+            "replyToken": "56757f20727244ed810e2efd30db4997",
+            "source": {
+                "userId": "Ub02ffd61231034e751128a885e29afad",
+                "type": "user"
+            },
+            "timestamp": 1580878859573,
+            "mode": "active",
+            "message": {
+                "type": "image",
+                "id": "11377029793050",
+                "contentProvider": {
+                    "type": "line"
+                }
+            }
+        }
+    ],
+    "destination": "U409c8c8d9177ccfd6b7136fe61a9816c"
+}
