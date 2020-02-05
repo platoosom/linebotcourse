@@ -1,83 +1,86 @@
 <?php
-// Require LINE Messaging SDK 
-require_once("vendor/autoload.php"); 
 
-// Data from LINE API 
-$json = file_get_contents('php://input');
-$content = json_decode( $json, false );
+$accessToken = 'YOXHo1+OhddnAt09XpUyh8NalDxTc/cSVEnfrpyeFB2ReGb2o8eANDP7O33gWKuGIQP1FwoRs1sVMMiHep5KJakCxqUrGPY8UwohtnnkCqa6BKpzcublUTLEywqPqpvikb6telPHi+IIpTqt9JR0rgdB04t89/1O/w1cDnyilFU=';//copy Channel access token ตอนที่ตั้งค่ามาใส่
 
-// Debug
-debug($json);
+// Get information form LINE API 
+$content = file_get_contents('php://input');
+$object = json_decode($content, false);
 
-// Prepare Bot Object
-$httpClient = new \LINE\LINEBot\HTTPClient\CurlHTTPClient('YOXHo1+OhddnAt09XpUyh8NalDxTc/cSVEnfrpyeFB2ReGb2o8eANDP7O33gWKuGIQP1FwoRs1sVMMiHep5KJakCxqUrGPY8UwohtnnkCqa6BKpzcublUTLEywqPqpvikb6telPHi+IIpTqt9JR0rgdB04t89/1O/w1cDnyilFU=');
-$bot = new \LINE\LINEBot($httpClient, ['channelSecret' => '8650d85cd6caadce6b5342dc093e4c50']);
+// Create headers
+$headers = array();
+$headers[] = "Content-Type: application/json";
+$headers[] = "Authorization: Bearer {$accessToken}";
 
 
-foreach($content->events as $event){
+foreach($object->events as $event){
     switch($event->type){
         case "message":
-            switch($event->message->type){
-                // Text message 
-                case "message":
-                    $resmessage = get_response_message($event->message->text);
+            $replaytoken = $event->replyToken;
 
-                    $textMessageBuilder = new \LINE\LINEBot\MessageBuilder\TextMessageBuilder($resmessage);
-                    $response = $bot->replyMessage($event->replyToken, $textMessageBuilder);
-                break;
-                // Sticker message
-                case "sticker":
-                    $packageId = 11537;
-                    $stickerId = 52002737;
-                    $stickerMessageBuilder = new \LINE\LINEBot\MessageBuilder\StickerMessageBuilder($packageId, $stickerId);
-                    $response = $bot->replyMessage($event->replyToken, $stickerMessageBuilder);
-                break;
-                // Image message
-                case "image":
-                    $image_id = $event->message->id;
-                    $raw = $bot->getMessageContent($image_id); 
-                    $fileName = "images/{$image_id}.jpg";
-                    $file = fopen($fileName, 'w'); 
-                    fwrite($file, $raw->getRawBody());
+            // Create body
+            $body = '
 
-                    $resmessage = "Your image ID is {$image_id} and your file name is {$fileName}";
-                    $textMessageBuilder = new \LINE\LINEBot\MessageBuilder\TextMessageBuilder($resmessage);
-                    $response = $bot->replyMessage($event->replyToken, $textMessageBuilder);
- 
-                break;
-
-            }
-
+                {
+                    "replyToken": "'.$replaytoken.'",
+                    "messages": [
+                        {
+                            "type": "template",
+                            "altText": "this is a buttons template",
+                            "template": {
+                            "type": "buttons",
+                            "actions": [
+                                {
+                                "type": "message",
+                                "label": "PM 6:00",
+                                "text": "PM 6:00"
+                                },
+                                {
+                                "type": "message",
+                                "label": "PM 7:00",
+                                "text": "PM 7:00"
+                                },
+                                {
+                                "type": "message",
+                                "label": "PM 8:00",
+                                "text": "PM 8:00"
+                                },
+                                {
+                                "type": "message",
+                                "label": "PM 9:00",
+                                "text": "PM 9:00"
+                                }
+                            ],
+                            "title": "Select the Reservation time",
+                            "text": "Last Order : PM 9:00"
+                            }
+                        }
+                    ],
+                    "notificationDisabled": false
+                }
+            ';
         break;
     }
 }
 
-/**
- * Apropiate response text 
- */
-function get_response_message($input){
-    $resp = "";
 
-    // Select reponse text
-    switch($input){
-        case "tel":
-            $resp = "089-0638436";
-            break;
-        case "loc":
-            $resp = "99/547 บางมด";
-            break;
-        default:
-            $resp = "I don't undestand your question '".$input."'. You can type tel (for contact number), loc (for location)";
-    }
+// Send information back to LINE API 
+callLineApi($headers, $body);
 
-    return $resp;
-}
 
 /**
- * Debug
+ * Send message to LINE API 
  */
-function debug($message){
-    $file = fopen("debug.txt", "w");
-    fwrite($file, $message);
-    fclose($file);
+function callLineApi($headers,$body){
+    $lineApiUri = "https://api.line.me/v2/bot/message/reply";
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL,$lineApiUri);
+    curl_setopt($ch, CURLOPT_HEADER, false);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);    
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER,true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    $result = curl_exec($ch);
+    curl_close ($ch);
 }
+    
